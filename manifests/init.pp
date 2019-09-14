@@ -87,6 +87,10 @@
 #   (bool) Whether to localise the timestamps in the UI.
 #   Defaults to 'True' ($::puppetboard::params::localise_timestamp)
 #
+# [*python_version*]
+#   (string) Python version to use.
+#   Defaults to undef.
+#
 # [*python_loglevel*]
 #   (string) Python logging module log level.
 #   Defaults to 'info' ($::puppetboard::params::python_loglevel)
@@ -122,6 +126,10 @@
 # [*manage_virtualenv*]
 #   (bool) If true, require the virtualenv package. If false do nothing.
 #   Defaults to false
+#
+# [*virtualenv*]
+#   (string) virtualenv executable to use
+#   Defaults to undef
 #
 # [*manage_user*]
 #   (bool) If true, manage (create) this group. If false do nothing.
@@ -180,6 +188,7 @@ class puppetboard(
   Boolean $enable_query                                       = $puppetboard::params::enable_query,
   Boolean $localise_timestamp                                 = $puppetboard::params::localise_timestamp,
   Puppetboard::Syslogpriority $python_loglevel                = $puppetboard::params::python_loglevel,
+  Optional[String] $python_version                            = undef,
   Optional[String] $python_proxy                              = undef,
   Optional[String] $python_index                              = undef,
   Optional[Boolean] $python_use_epel                          = undef,
@@ -190,6 +199,7 @@ class puppetboard(
   Boolean $manage_group                                       = true,
   Boolean $manage_git                                         = false,
   Boolean $manage_virtualenv                                  = false,
+  Optional[String] $virtualenv                                = undef,
   Integer $reports_count                                      = $puppetboard::params::reports_count,
   String $default_environment                                 = $puppetboard::params::default_environment,
   String $listen                                              = $puppetboard::params::listen,
@@ -250,7 +260,8 @@ class puppetboard(
 
   python::virtualenv { "${basedir}/virtenv-puppetboard":
     ensure       => present,
-    version      => 'system',
+    version      => $python_version,
+    virtualenv   => $virtualenv,
     requirements => "${basedir}/puppetboard/requirements.txt",
     systempkgs   => true,
     distribute   => false,
@@ -281,6 +292,7 @@ class puppetboard(
 
   if $manage_virtualenv and !defined(Package[$puppetboard::params::virtualenv]) {
     class { 'python':
+      version    => $python_version,
       virtualenv => 'present',
       dev        => 'present',
       use_epel   => $python_use_epel,
